@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docházková aplikace</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Docházková aplikace</h1>
+        
+        <div class="form-container">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="jmeno">Jméno a příjmení:</label>
+                    <select id="jmeno">
+                        <option value="">-- Načítání jmen --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="funkce">Funkce:</label>
+                    <select id="funkce">
+                        <option value="agronom">agronom</option>
+                        <option value="technik RV">technik RV</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="mesic">Měsíc:</label>
+                    <select id="mesic">
+                        <option value="1">Leden</option>
+                        <option value="2">Únor</option>
+                        <option value="3">Březen</option>
+                        <option value="4">Duben</option>
+                        <option value="5">Květen</option>
+                        <option value="6">Červen</option>
+                        <option value="7">Červenec</option>
+                        <option value="8">Srpen</option>
+                        <option value="9">Září</option>
+                        <option value="10">Říjen</option>
+                        <option value="11">Listopad</option>
+                        <option value="12">Prosinec</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rok">Rok:</label>
+                    <input type="number" id="rok" min="2000" max="2100" value="2025">
+                </div>
+                <div class="form-group">
+                    <label for="cislo">Číslo zaměstnance:</label>
+                    <input type="text" id="cislo" placeholder="Číslo zaměstnance" readonly>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="prichod">Standardní příchod:</label>
+                    <input type="time" id="prichod" value="07:00">
+                </div>
+                <div class="form-group">
+                    <label for="odchod">Standardní odchod:</label>
+                    <input type="time" id="odchod" value="15:30">
+                </div>
+                <div class="form-group">
+                    <label for="prestavka-od">Přestávka od:</label>
+                    <input type="time" id="prestavka-od" value="11:30">
+                </div>
+                <div class="form-group">
+                    <label for="prestavka-do">Přestávka do:</label>
+                    <input type="time" id="prestavka-do" value="12:00">
+                </div>
+            </div>
+            
+            <button onclick="generujVykaz()">Vygenerovat výkaz</button>
+        </div>
+
+        <div id="vykaz-container" style="display: none;">
+            <div class="header-info">
+                <div>
+                    <p><strong>JMÉNO:</strong> <span id="vykaz-jmeno"></span></p>
+                    <p><strong>MĚSÍC:</strong> <span id="vykaz-mesic"></span> <span id="vykaz-rok"></span></p>
+                </div>
+                <div>
+                    <p><strong>FUNKCE:</strong> <span id="vykaz-funkce"></span></p>
+                    <p><strong>ČÍSLO:</strong> <span id="vykaz-cislo"></span></p>
+                </div>
+            </div>
+
+            <div class="header-title">VÝKAZ PRÁCE</div>
+
+            <table id="dochazka-tabulka">
+                <thead>
+                    <tr>
+                        <th class="date-column">DAT</th>
+                        <th class="shift-column">SMĚNY</th>
+                        <th class="hours-column">HOD</th>
+                        <th class="time-column" colspan="2">HODINA</th>
+                        <th class="time-column" colspan="2">PŘERUŠENÍ</th>
+                        <th class="note-column">POZNÁMKA</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th>příchod</th>
+                        <th>odchod</th>
+                        <th>odchod</th>
+                        <th>příchod</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tabulka-body">
+                    <!-- Zde se vygeneruje obsah tabulky -->
+                </tbody>
+            </table>
+
+            <div class="totals">
+                <div class="total-item">
+                    <strong>Celkem hodin:</strong> <span id="celkem-hodin">0</span>
+                </div>
+                <div class="total-item">
+                    <strong>D:</strong> <span id="celkem-d">0</span>
+                </div>
+                <div class="total-item">
+                    <strong>Sv:</strong> <span id="celkem-sv">0</span>
+                </div>
+                <div class="total-item">
+                    <strong>Pv:</strong> <span id="celkem-pv">0</span>
+                </div>
+                <div class="total-item">
+                    <strong>NÚ:</strong> <span id="celkem-nu">0</span>
+                </div>
+                <div class="total-item">
+                    <strong>NVA:</strong> <span id="celkem-nva">0</span>
+                </div>
+                <div class="total-item">
+                    <strong>Pk:</strong> <span id="celkem-pk">0</span>
+                </div>
+            </div>
+
+            <div class="total-item">
+                <strong>CELKEM K VÝPLATĚ:</strong> <span id="celkem-vyplata">0</span>
+            </div>
+
+            <div class="signature">
+                <p>Podpis: ________________________</p>
+            </div>
+
+            <button onclick="tiskVykazu()">Tisknout výkaz</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
