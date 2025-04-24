@@ -32,6 +32,36 @@ function zakladniSvatky(rok) {
       '2026-12-24', // Štědrý den
       '2026-12-25', // 1. svátek vánoční
       '2026-12-26'  // 2. svátek vánoční
+    ],
+    '2027': [
+      '2027-01-01', // Nový rok
+      '2027-03-26', // Velký pátek
+      '2027-03-29', // Velikonoční pondělí
+      '2027-05-01', // Svátek práce
+      '2027-05-08', // Den vítězství
+      '2027-07-05', // Den slovanských věrozvěstů Cyrila a Metoděje
+      '2027-07-06', // Den upálení mistra Jana Husa
+      '2027-09-28', // Den české státnosti
+      '2027-10-28', // Den vzniku samostatného československého státu
+      '2027-11-17', // Den boje za svobodu a demokracii
+      '2027-12-24', // Štědrý den
+      '2027-12-25', // 1. svátek vánoční
+      '2027-12-26'  // 2. svátek vánoční
+    ],
+    '2028': [
+      '2028-01-01', // Nový rok
+      '2028-04-14', // Velký pátek
+      '2028-04-17', // Velikonoční pondělí
+      '2028-05-01', // Svátek práce
+      '2028-05-08', // Den vítězství
+      '2028-07-05', // Den slovanských věrozvěstů Cyrila a Metoděje
+      '2028-07-06', // Den upálení mistra Jana Husa
+      '2028-09-28', // Den české státnosti
+      '2028-10-28', // Den vzniku samostatného československého státu
+      '2028-11-17', // Den boje za svobodu a demokracii
+      '2028-12-24', // Štědrý den
+      '2028-12-25', // 1. svátek vánoční
+      '2028-12-26'  // 2. svátek vánoční
     ]
   };
 
@@ -249,6 +279,12 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
     // Zjištění počtu dní v měsíci
     const pocetDni = new Date(rok, mesicIndex + 1, 0).getDate();
     
+    // Výpočet standardních hodin podle zadaných časů v hlavičce
+    const standardniHodiny = prepocitejHodinyDle(standardniPrichod, standardniOdchod, prestavkaOd, prestavkaDo);
+    
+    // Pro svátky a dovolenou používáme pevnou hodnotu 8 hodin
+    const pevneHodiny = 8;
+    
     let celkemHodin = 0;
     let svatkyHodiny = 0;
 
@@ -267,7 +303,7 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
         const jeVikend = denVTydnu === 0 || denVTydnu === 6;
         const datumString = `${rok}-${String(mesicIndex + 1).padStart(2, '0')}-${String(den).padStart(2, '0')}`;
         
-        // Použití dynamického seznamu svátků místo natvrdo definovaného seznamu svatky2025
+        // Použití dynamického seznamu svátků
         const jeSvatek = aktivniSvatky.includes(datumString);
         
         if (jeVikend) {
@@ -275,9 +311,9 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
         }
         if (jeSvatek) {
             tr.classList.add('holiday');
-            // Počítání svátků (pokud není víkend)
+            // Počítání svátků (pokud není víkend) - pevných 8 hodin
             if (!jeVikend) {
-                svatkyHodiny += 8;
+                svatkyHodiny += pevneHodiny; // Použijeme pevně stanovených 8 hodin pro svátky
             }
         }
         
@@ -333,7 +369,7 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
             inputHodiny.min = '0';
             inputHodiny.max = '24';
             inputHodiny.step = '0.5';
-            inputHodiny.value = '8';
+            inputHodiny.value = standardniHodiny.toFixed(1); // Pro běžné dny používáme vypočítané hodiny
             inputHodiny.className = 'hodiny-input';
             inputHodiny.style.width = '100%';
             
@@ -348,7 +384,7 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
             });
             
             tdHodiny.appendChild(inputHodiny);
-            celkemHodin += 8;
+            celkemHodin += standardniHodiny;
         }
         tr.appendChild(tdHodiny);
         
@@ -360,6 +396,20 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
             inputPrichod.type = 'time';
             inputPrichod.value = standardniPrichod;
             inputPrichod.style.width = '100%';
+            inputPrichod.addEventListener('change', function() {
+                // Přepočítat odpracované hodiny
+                const radek = tdPrichod.closest('tr');
+                const odpracovaneHodiny = vypocitejPracovniDobu(radek);
+                
+                // Aktualizovat hodnotu v input poli s hodinami
+                const hodinyInput = radek.querySelector('.hodiny-input');
+                if (hodinyInput) {
+                    hodinyInput.value = odpracovaneHodiny.toFixed(1);
+                }
+                
+                // Aktualizovat celkové součty
+                aktualizujCelkoveHodiny();
+            });
             tdPrichod.appendChild(inputPrichod);
         }
         tr.appendChild(tdPrichod);
@@ -372,6 +422,20 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
             inputOdchod.type = 'time';
             inputOdchod.value = standardniOdchod;
             inputOdchod.style.width = '100%';
+            inputOdchod.addEventListener('change', function() {
+                // Přepočítat odpracované hodiny
+                const radek = tdOdchod.closest('tr');
+                const odpracovaneHodiny = vypocitejPracovniDobu(radek);
+                
+                // Aktualizovat hodnotu v input poli s hodinami
+                const hodinyInput = radek.querySelector('.hodiny-input');
+                if (hodinyInput) {
+                    hodinyInput.value = odpracovaneHodiny.toFixed(1);
+                }
+                
+                // Aktualizovat celkové součty
+                aktualizujCelkoveHodiny();
+            });
             tdOdchod.appendChild(inputOdchod);
         }
         tr.appendChild(tdOdchod);
@@ -380,10 +444,14 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
         const tdPreruseniOdchod = document.createElement('td');
         tdPreruseniOdchod.className = 'input-cell';
         if (!jeVikend && !jeSvatek) {
+            // Pro přerušení - odchod
             const inputPreruseniOd = document.createElement('input');
             inputPreruseniOd.type = 'time';
             inputPreruseniOd.value = prestavkaOd;
             inputPreruseniOd.style.width = '100%';
+            inputPreruseniOd.addEventListener('change', function() {
+                aktualizujCelkoveHodiny();
+            });
             tdPreruseniOdchod.appendChild(inputPreruseniOd);
         }
         tr.appendChild(tdPreruseniOdchod);
@@ -392,10 +460,14 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
         const tdPreruseniPrichod = document.createElement('td');
         tdPreruseniPrichod.className = 'input-cell';
         if (!jeVikend && !jeSvatek) {
+            // Pro přerušení - příchod
             const inputPreruseniDo = document.createElement('input');
             inputPreruseniDo.type = 'time';
             inputPreruseniDo.value = prestavkaDo;
             inputPreruseniDo.style.width = '100%';
+            inputPreruseniDo.addEventListener('change', function() {
+                aktualizujCelkoveHodiny();
+            });
             tdPreruseniPrichod.appendChild(inputPreruseniDo);
         }
         tr.appendChild(tdPreruseniPrichod);
@@ -413,13 +485,16 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
         tbody.appendChild(tr);
     }
     
-    // Aktualizace celkových součtů
-    document.getElementById('celkem-hodin').textContent = celkemHodin;
-    document.getElementById('celkem-sv').textContent = svatkyHodiny;
+    // Na konci funkce volám inicializaci event delegace
+    initEventDelegation();
     
-    // Aktualizace celkové výplaty (hodiny + svátky - dovolené budou přidány později)
+    // Aktualizace celkových součtů
+    document.getElementById('celkem-hodin').textContent = celkemHodin.toFixed(1);
+    document.getElementById('celkem-sv').textContent = svatkyHodiny.toFixed(1);
+    
+    // Aktualizace celkové výplaty (hodiny + svátky)
     const celkemVyplata = celkemHodin + svatkyHodiny;
-    document.getElementById('celkem-vyplata').textContent = celkemVyplata;
+    document.getElementById('celkem-vyplata').textContent = celkemVyplata.toFixed(1);
 }
 
 // Funkce pro aktualizaci součtů dovolené
@@ -430,6 +505,9 @@ function aktualizujSoucty() {
     let neplVolnoHodiny = 0;
     let pracovniKlidHodiny = 0;
     
+    // Pevná hodnota pro dovolenou a další typy nepřítomnosti
+    const pevneHodiny = 8;
+    
     // Projít všechny selecty směn
     const vsechnySmenySelecty = document.querySelectorAll('#tabulka-body .input-cell select[data-den]');
     
@@ -439,28 +517,24 @@ function aktualizujSoucty() {
         // Najít odpovídající řádek
         const radek = select.closest('tr');
         
-        // Získat hodnotu hodin (pokud je v inputu)
-        const hodinyInput = radek.querySelector('.hodiny-input');
-        const hodinyValue = hodinyInput ? parseFloat(hodinyInput.value) || 8 : 8;
-        
         // Kontrola, zda řádek není víkend nebo svátek
         if (!radek.classList.contains('weekend') && !radek.classList.contains('holiday')) {
             // Přičíst hodiny podle typu směny
             switch(hodnota) {
                 case 'dovolená':
-                    dovolenaHodiny += hodinyValue;
+                    dovolenaHodiny += pevneHodiny; // Vždy pevných 8 hodin
                     break;
                 case 'služba':
-                    sluzbyHodiny += hodinyValue;
+                    sluzbyHodiny += pevneHodiny;
                     break;
                 case 'pracovní volno':
-                    pracovniVolnoHodiny += hodinyValue;
+                    pracovniVolnoHodiny += pevneHodiny;
                     break;
                 case 'neplacené volno (absence)':
-                    neplVolnoHodiny += hodinyValue;
+                    neplVolnoHodiny += pevneHodiny;
                     break;
                 case 'pracovní klid':
-                    pracovniKlidHodiny += hodinyValue;
+                    pracovniKlidHodiny += pevneHodiny;
                     break;
             }
             
@@ -471,19 +545,35 @@ function aktualizujSoucty() {
                     bunka.style.color = '#777';
                     bunka.style.fontStyle = 'italic';
                 });
+                
+                // Aktualizovat hodnotu v input poli na pevných 8 hodin, pokud existuje
+                const hodinyInput = radek.querySelector('.hodiny-input');
+                if (hodinyInput) {
+                    hodinyInput.value = pevneHodiny.toFixed(1);
+                    hodinyInput.disabled = true; // Znemožnit úpravu pro dovolené a další speciální případy
+                }
             } else {
                 // Vrácení původního stylu
                 bunky.forEach(function(bunka) {
                     bunka.style.color = '';
                     bunka.style.fontStyle = '';
                 });
+                
+                // Povolit úpravu hodiny pole, pokud už není zakázáno
+                const hodinyInput = radek.querySelector('.hodiny-input');
+                if (hodinyInput) {
+                    hodinyInput.disabled = false;
+                }
             }
         }
     });
     
+    // BOD 1: Oprava získání hodnoty svátků z DOM místo neexistující proměnné
+    const svatkyHodiny = parseFloat(document.getElementById('celkem-sv').textContent || '0');
+    
     // Aktualizace počtů v HTML
     document.getElementById('celkem-d').textContent = dovolenaHodiny.toFixed(1);
-    document.getElementById('celkem-sv').textContent = svatkyHodiny; // Tato proměnná by měla být definována jinde
+    document.getElementById('celkem-sv').textContent = svatkyHodiny.toFixed(1); // Už neměníme hodnotu svátků 
     document.getElementById('celkem-pv').textContent = pracovniVolnoHodiny.toFixed(1);
     document.getElementById('celkem-nu').textContent = sluzbyHodiny.toFixed(1);
     document.getElementById('celkem-nva').textContent = neplVolnoHodiny.toFixed(1);
@@ -493,169 +583,306 @@ function aktualizujSoucty() {
     aktualizujCelkoveHodiny();
 }
 
+// BOD 2: Centralizovaná funkce pro výpočet pracovní doby - oprava pro standardní inputy
+function vypocitejPracovniDobu(radek) {
+  // Získání hodnot ze standardních time inputů
+  const prichod = radek.querySelector('td:nth-child(4) input[type="time"]')?.value;
+  const odchod = radek.querySelector('td:nth-child(5) input[type="time"]')?.value;
+  const preruseniOd = radek.querySelector('td:nth-child(6) input[type="time"]')?.value;
+  const preruseniDo = radek.querySelector('td:nth-child(7) input[type="time"]')?.value;
+  
+  return prepocitejHodinyDle(prichod, odchod, preruseniOd, preruseniDo);
+}
+
+// BOD 3: Vylepšená validace časových údajů
+function casNaMinuty(cas) {
+  if (!cas) return 0;
+  
+  // Přidání validace
+  const casPattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (!casPattern.test(cas)) {
+    console.error(`Neplatný formát času: ${cas}`);
+    return 0;
+  }
+  
+  const [hodiny, minuty] = cas.split(':').map(Number);
+  return hodiny * 60 + minuty;
+}
+
+// Funkce pro přepočet hodin podle příchodu, odchodu a přerušení
+function prepocitejHodinyDle(prichod, odchod, preruseniOd, preruseniDo) {
+  // Převod časů na minuty
+  const prichodMinuty = casNaMinuty(prichod);
+  const odchodMinuty = casNaMinuty(odchod);
+  const preruseniOdMinuty = casNaMinuty(preruseniOd);
+  const preruseniDoMinuty = casNaMinuty(preruseniDo);
+  
+  // Výpočet celkové doby (v minutách)
+  let celkemMinuty = odchodMinuty - prichodMinuty;
+  
+  // Kontrola platnosti zadaných hodnot
+  if (celkemMinuty < 0) {
+    console.error('Čas odchodu je před časem příchodu');
+    return 0;
+  }
+  
+  // Odečtění přerušení, pokud existuje
+  if (preruseniOdMinuty && preruseniDoMinuty) {
+    const preruseniMinuty = preruseniDoMinuty - preruseniOdMinuty;
+    
+    // Kontrola platnosti přerušení
+    if (preruseniMinuty < 0) {
+      console.error('Čas návratu z přerušení je před časem odchodu na přerušení');
+      return 0;
+    }
+    
+    celkemMinuty -= preruseniMinuty;
+  }
+  
+  // Převod na hodiny (s přesností na 0.5 hodiny)
+  return Math.round(celkemMinuty / 30) / 2;
+}
+
+// BOD 4: Optimalizace přístupu k localStorage s verzováním
+async function ziskejSvatkyProRok(rok) {
+  try {
+    // Nejprve zkontrolujeme, zda už máme svátky v localStorage
+    const cachedData = localStorage.getItem(`svatky_${rok}`);
+    if (cachedData) {
+      try {
+        const data = JSON.parse(cachedData);
+        
+        // Kontrola verze dat
+        if (data.version === 1 && data.data) {
+          console.log(`Načteny svátky pro rok ${rok} z cache`);
+          return data.data;
+        }
+        // Pokud data nemají správnou verzi, pokračujeme dál
+      } catch (e) {
+        console.error('Chyba při parsování dat z cache:', e);
+        // Pokračujeme k načtení nových dat
+      }
+    }
+    
+    // Zkontrolujeme, zda máme svátky v databázi, pokud ne, vypočítáme je
+    const svatky = zakladniSvatky(rok);
+    
+    // Uložení do cache s verzí pro příště
+    const dataToCache = {
+      version: 1,
+      data: svatky,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(`svatky_${rok}`, JSON.stringify(dataToCache));
+    
+    return svatky;
+  } catch (error) {
+    console.error(`Chyba při získávání svátků pro rok ${rok}:`, error);
+    // V případě chyby použijeme základní svátky bez cacheování
+    return zakladniSvatky(rok);
+  }
+}
+
+// BOD 5: Vylepšená event delegace s okamžitým přepočtem
+function initEventDelegation() {
+  // Odstraníme existující listener, pokud existuje
+  const tbody = document.getElementById('tabulka-body');
+  const existingClone = tbody.cloneNode(true);
+  tbody.parentNode.replaceChild(existingClone, tbody);
+  
+  // Přidání event delegace pro tabulku
+  document.getElementById('tabulka-body').addEventListener('change', function(e) {
+    // Zpracování změny v časových polích
+    if (e.target && (e.target.type === 'time')) {
+      // Najít odpovídající řádek
+      const radek = e.target.closest('tr');
+      
+      // Zkontrolovat, zda není vybrána speciální hodnota
+      const selectSmeny = radek.querySelector('select[data-den]');
+      if (!selectSmeny || !selectSmeny.value) {
+        // Přepočítat hodiny pro tento řádek
+        const odpracovaneHodiny = vypocitejPracovniDobu(radek);
+        
+        // Aktualizovat hodnotu v input poli
+        const hodinyInput = radek.querySelector('.hodiny-input');
+        if (hodinyInput) {
+          hodinyInput.value = odpracovaneHodiny.toFixed(1);
+        }
+        
+        // Aktualizovat celkové součty
+        aktualizujCelkoveHodiny();
+      }
+    }
+    
+    // Zpracování změny v selectu směn
+    if (e.target && e.target.tagName === 'SELECT' && e.target.dataset.den) {
+      aktualizujSoucty();
+    }
+    
+    // Zpracování změny v poli s hodinami
+    if (e.target && e.target.classList.contains('hodiny-input')) {
+      aktualizujCelkoveHodiny();
+    }
+  });
+  
+  // Přidání event delegace pro změny při vstupu (input) - okamžitá aktualizace
+  document.getElementById('tabulka-body').addEventListener('input', function(e) {
+    // Zpracování změny v časových polích
+    if (e.target && (e.target.type === 'time')) {
+      // Najít odpovídající řádek
+      const radek = e.target.closest('tr');
+      
+      // Zkontrolovat, zda není vybrána speciální hodnota
+      const selectSmeny = radek.querySelector('select[data-den]');
+      if (!selectSmeny || !selectSmeny.value) {
+        // Přepočítat hodiny pro tento řádek
+        const odpracovaneHodiny = vypocitejPracovniDobu(radek);
+        
+        // Aktualizovat hodnotu v input poli
+        const hodinyInput = radek.querySelector('.hodiny-input');
+        if (hodinyInput) {
+          hodinyInput.value = odpracovaneHodiny.toFixed(1);
+        }
+        
+        // Aktualizovat celkové součty
+        aktualizujCelkoveHodiny();
+      }
+    }
+  });
+}
+
+function aktualizujCelkoveHodiny() {
+  let celkemHodin = 0;
+  
+  // Projít všechny řádky tabulky
+  const radky = document.querySelectorAll('#tabulka-body tr');
+  
+  radky.forEach(function(radek) {
+    // Přeskočit víkendy a svátky
+    if (radek.classList.contains('weekend') || radek.classList.contains('holiday')) {
+      return;
+    }
+    
+    // Zkontrolovat, zda není vybrána speciální hodnota (dovolená, služba atd.)
+    const selectSmeny = radek.querySelector('select[data-den]');
+    if (selectSmeny && selectSmeny.value) {
+      return; // Přeskočit řádky se speciálními hodnotami
+    }
+    
+    // Najít pole pro hodiny
+    const hodinyInput = radek.querySelector('.hodiny-input');
+    if (hodinyInput) {
+      // Načíst hodnotu přímo z pole s hodinami
+      const hodinyValue = parseFloat(hodinyInput.value) || 0;
+      celkemHodin += hodinyValue;
+    }
+  });
+  
+  // Aktualizace celkových hodin v HTML
+  const celkemHodinElement = document.getElementById('celkem-hodin');
+  if (celkemHodinElement) {
+    celkemHodinElement.textContent = celkemHodin.toFixed(1);
+  }
+  
+  // Získat hodnoty dovolených, svátků atd.
+  const svatkyHodiny = parseFloat(document.getElementById('celkem-sv')?.textContent || '0');
+  const dovolenaHodiny = parseFloat(document.getElementById('celkem-d')?.textContent || '0');
+  const pracovniVolnoHodiny = parseFloat(document.getElementById('celkem-pv')?.textContent || '0');
+  
+  // Vypočítat celkovou výplatu (hodiny + svátky + dovolené + pracovní volno)
+  const celkemVyplata = celkemHodin + svatkyHodiny + dovolenaHodiny + pracovniVolnoHodiny;
+  
+  // Aktualizace celkové výplaty v HTML
+  const celkemVyplataElement = document.getElementById('celkem-vyplata');
+  if (celkemVyplataElement) {
+    celkemVyplataElement.textContent = celkemVyplata.toFixed(1);
+  }
+}
+
 function tiskVykazu() {
     window.print();
 }
 
-// Funkce pro získání svátků pro zadaný rok
+
+
+// Funkce pro načítání svátků z Google Calendar API - nahrazena lokálním výpočtem
+async function nactiSvatkyZGoogleCalendar(rok) {
+  // Místo volání API vždy používáme lokální výpočet svátků
+  console.log('Používám lokální výpočet svátků pro rok', rok);
+  return vypocitejSvatky(rok);
+}
+
+// Funkce pro získání svátků pro zadaný rok - zjednodušená bez API
 async function ziskejSvatkyProRok(rok) {
-  // Nejprve zkontrolujeme, zda už máme svátky v localStorage
-  const cachedSvatky = localStorage.getItem(`svatky_${rok}`);
-  if (cachedSvatky) {
-    return JSON.parse(cachedSvatky);
-  }
-  
   try {
-    // Pokud nemáme v cache, zkusíme načíst z Google Calendar API
-    const svatky = await nactiSvatkyZGoogleCalendar(rok);
+    // Nejprve zkontrolujeme, zda už máme svátky v localStorage
+    const cachedData = localStorage.getItem(`svatky_${rok}`);
+    if (cachedData) {
+      try {
+        const data = JSON.parse(cachedData);
+        
+        // Kontrola verze dat
+        if (data.version === 1 && data.data) {
+          console.log(`Načteny svátky pro rok ${rok} z cache`);
+          return data.data;
+        }
+        // Pokud data nemají správnou verzi, pokračujeme dál
+      } catch (e) {
+        console.error('Chyba při parsování dat z cache:', e);
+        // Pokračujeme k načtení nových dat
+      }
+    }
     
-    // Uložení do cache pro příště
-    localStorage.setItem(`svatky_${rok}`, JSON.stringify(svatky));
+    // Zkontrolujeme, zda máme svátky v databázi, pokud ne, vypočítáme je
+    const svatky = zakladniSvatky(rok);
+    
+    // Uložení do cache s verzí pro příště
+    const dataToCache = {
+      version: 1,
+      data: svatky,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(`svatky_${rok}`, JSON.stringify(dataToCache));
     
     return svatky;
   } catch (error) {
-    console.warn('Nepodařilo se načíst svátky z API:', error);
-    
-    // Pokud API selže, použijeme lokální data
-    const lokalniSvatky = zakladniSvatky(rok);
-    
-    // Uložení do cache pro příště
-    localStorage.setItem(`svatky_${rok}`, JSON.stringify(lokalniSvatky));
-    
-    return lokalniSvatky;
-  }
-}
-
-// Funkce pro načítání svátků z Google Calendar API
-async function nactiSvatkyZGoogleCalendar(rok) {
-  // Pro testovací účely použijeme raději zakladniSvatky - nahraďte později skutečným API klíčem
-  const API_KEY = ''; // Váš Google API klíč - zatím prázdný
-  const CALENDAR_ID = 'cs.czech#holiday@group.v.calendar.google.com'; // ID pro český kalendář svátků
-  
-  // Pokud nemáme API klíč, použijeme místní data
-  if (!API_KEY) {
-    console.log('Google Calendar API klíč není nastaven, používám lokální data');
-    return zakladniSvatky(rok);
-  }
-  
-  try {
-    const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?` +
-      `key=${API_KEY}&timeMin=${rok}-01-01T00:00:00Z&timeMax=${rok}-12-31T23:59:59Z`
-    );
-    
-    if (!response.ok) {
-      throw new Error('Nepodařilo se načíst data z Google Calendar');
-    }
-    
-    const data = await response.json();
-    return data.items.map(item => {
-      // Získat datum ve formátu YYYY-MM-DD z Google Calendar API
-      return item.start.date;
-    });
-  } catch (error) {
-    console.error('Chyba při načítání svátků z Google Calendar:', error);
-    // V případě chyby použijeme lokální data
+    console.error(`Chyba při získávání svátků pro rok ${rok}:`, error);
+    // V případě chyby použijeme základní svátky bez cacheování
     return zakladniSvatky(rok);
   }
 }
 
-// Přidejte testovací funkci
-async function testApi() {
-  try {
-    const rok = 2026;
-    console.log("Testování API pro svátky roku", rok);
-    const svatky = await nactiSvatkyZGoogleCalendar(rok);
-    console.log("API vrátilo svátky:", svatky);
-    
-    // Kontrola, zda API vrátilo očekávané svátky
-    if (!svatky || svatky.length < 10) {
-      console.warn("API vrátilo neplatný počet svátků, pravděpodobně nefunguje správně");
-    }
-  } catch (error) {
-    console.error("Test API selhal:", error);
-  }
-}
-
-// Spusťte test při načtení stránky
-window.addEventListener('DOMContentLoaded', function() {
-  // Odkomentujte následující řádek pro otestování API
-  // testApi();
-});
-
-// Export funkcí pro testování
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    mesiceNazvy,
-    zakladniSvatky,
-    vypocitejSvatky,
-    vypocitejVelikonoce,
-    formatujDatum,
-    zamestnanci,
-    nacistJmenaZeSouboru,
-    generujVykaz,
-    generujTabulku,
-    aktualizujSoucty,
-    aktualizujCelkoveHodiny,
-    prepocitejHodinyDle,
-    casNaMinuty,
-    tiskVykazu,
-    ziskejSvatkyProRok,
-    nactiSvatkyZGoogleCalendar
-  };
-}
-
-// Opravená funkce aktualizujCelkoveHodiny
-function aktualizujCelkoveHodiny() {
-    // Získání všech vstupů pro hodiny
-    const vsechnyHodinyInputy = document.querySelectorAll('#tabulka-body .hodiny-input');
-    
-    let celkemHodin = 0;
-    
-    // Sečtení hodnot ze všech inputů
-    vsechnyHodinyInputy.forEach(function(input) {
-        // Převést na číslo a přidat k součtu
-        const hodinyValue = parseFloat(input.value) || 0;
-        celkemHodin += hodinyValue;
-        console.log(`Hodnota v input: ${input.value}, převedeno na číslo: ${hodinyValue}, průběžný součet: ${celkemHodin}`);
-    });
-    
-    // Aktualizace zobrazeného součtu hodin (zaokrouhleno na 1 desetinné místo)
-    document.getElementById('celkem-hodin').textContent = celkemHodin.toFixed(1);
-    console.log(`Celkový součet hodin: ${celkemHodin.toFixed(1)}`);
-    
-    // Aktualizace celkové výplaty
-    const svatkyHodiny = parseFloat(document.getElementById('celkem-sv').textContent) || 0;
-    const dovolenaHodiny = parseFloat(document.getElementById('celkem-d').textContent) || 0;
-    const celkemVyplata = celkemHodin + svatkyHodiny + dovolenaHodiny;
-    document.getElementById('celkem-vyplata').textContent = celkemVyplata.toFixed(1);
-    console.log(`Celková výplata: ${celkemVyplata.toFixed(1)}`);
-}
-
-// Nová funkce pro kompletní přepočítání všech hodnot
-function prepocitejVsechnyHodnoty() {
-    console.log("Přepočítávám všechny hodnoty...");
-    
-    // Nejprve aktualizujeme součty směn (dovolené, volno, služby atd.)
-    aktualizujSoucty();
-    
-    // Pak aktualizujeme celkové hodiny
-    aktualizujCelkoveHodiny();
-    
-    console.log("Přepočítání dokončeno.");
-}
-
-// Přidání tlačítka pro manuální přepočet (pro případ problémů)
 function pridejTlacitkoPreepocet() {
-    const vykazContainer = document.getElementById('vykaz-container');
-    const tiskButton = document.querySelector('#vykaz-container button');
-    
-    if (vykazContainer && tiskButton) {
-        const prepocetButton = document.createElement('button');
-        prepocetButton.textContent = "Přepočítat hodnoty";
-        prepocetButton.style.marginRight = "10px";
-        prepocetButton.addEventListener('click', prepocitejVsechnyHodnoty);
-        
-        vykazContainer.insertBefore(prepocetButton, tiskButton);
+  // Kontrola, zda tlačítko již neexistuje
+  if (document.getElementById('btn-prepocet')) {
+    return; // Tlačítko už existuje, není potřeba ho přidávat znovu
+  }
+  
+  // Vytvoření nového tlačítka
+  const tlacitko = document.createElement('button');
+  tlacitko.id = 'btn-prepocet';
+  tlacitko.className = 'btn btn-secondary';
+  tlacitko.textContent = 'Přepočítat hodiny';
+  tlacitko.type = 'button';
+  
+  // Přidání event listeneru
+  tlacitko.addEventListener('click', function() {
+    aktualizujCelkoveHodiny();
+    aktualizujSoucty();
+    console.log('Hodiny byly přepočítány');
+  });
+  
+  // Přidání tlačítka do DOM - vložíme ho před tlačítko tisku
+  const tiskTlacitko = document.getElementById('btn-print');
+  if (tiskTlacitko && tiskTlacitko.parentNode) {
+    tiskTlacitko.parentNode.insertBefore(tlacitko, tiskTlacitko);
+  } else {
+    // Pokud nenajdeme tlačítko tisku, přidáme ho na konec ovládacích prvků
+    const ovladaciPrvky = document.querySelector('.vykaz-controls');
+    if (ovladaciPrvky) {
+      ovladaciPrvky.appendChild(tlacitko);
     }
+  }
 }
