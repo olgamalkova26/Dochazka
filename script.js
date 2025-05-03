@@ -142,8 +142,19 @@ const mesiceNazvy = [
 // Nastavení aktuálního měsíce a roku při načtení stránky a načtení seznamu jmen
 window.onload = function() {
     const dnes = new Date();
-    document.getElementById('mesic').value = dnes.getMonth() + 1;
-    document.getElementById('rok').value = dnes.getFullYear();
+    // Výpočet předchozího měsíce (aktuální měsíc - 1)
+    let predchoziMesic = dnes.getMonth(); // getMonth() vrací 0-11, kde 0 je leden
+    let aktualniRok = dnes.getFullYear();
+    
+    // Pokud je aktuálně leden (měsíc 0), přejdeme na prosinec předchozího roku
+    if (predchoziMesic === 0) {
+        predchoziMesic = 12; // prosinec
+        aktualniRok--; // předchozí rok
+    }
+    
+    // Nastavení hodnot do formuláře
+    document.getElementById('mesic').value = predchoziMesic;
+    document.getElementById('rok').value = aktualniRok;
     
     // Načíst jména ze souboru
     nacistJmenaZeSouboru();
@@ -332,7 +343,7 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
         // Přidání prázdné výchozí možnosti
         const prazdnaOption = document.createElement('option');
         prazdnaOption.value = "";
-        prazdnaOption.textContent = "-- Vyberte --";
+        prazdnaOption.textContent = ""; // Prázdný text místo "-- Vyberte --"
         selectSmeny.appendChild(prazdnaOption);
         
         // Přidání možností
@@ -472,12 +483,13 @@ function generujTabulku(mesicIndex, rok, standardniPrichod, standardniOdchod, pr
         }
         tr.appendChild(tdPreruseniPrichod);
         
-        // Poznámka - nová buňka pro zadání poznámky
+        // Poznámka - nová buňka pro zadání poznámky bez placeholderu
         const tdPoznamka = document.createElement('td');
         tdPoznamka.className = 'input-cell';
         const inputPoznamka = document.createElement('input');
         inputPoznamka.type = 'text';
-        inputPoznamka.placeholder = 'Poznámka';
+        // Odstraníme placeholder úplně
+        // inputPoznamka.placeholder = 'Poznámka';
         inputPoznamka.style.width = '100%';
         tdPoznamka.appendChild(inputPoznamka);
         tr.appendChild(tdPoznamka);
@@ -800,8 +812,99 @@ function aktualizujCelkoveHodiny() {
   }
 }
 
+// Vylepšená funkce pro tisk výkazu, která zajistí správné zobrazení časových údajů
 function tiskVykazu() {
+    // Přidání dočasného stylu pro tisk
+    const tiskStyle = document.createElement('style');
+    tiskStyle.id = 'docasny-tisk-styl';
+    tiskStyle.textContent = `
+        @media print {
+            .tisk-cas {
+                font-family: monospace;
+                width: 100%;
+                display: inline-block;
+                text-align: center;
+                white-space: nowrap;
+                font-size: 12px;
+                min-width: 4em; /* Zajistit dostatečný prostor pro zobrazení času */
+            }
+            
+            /* Zajistit, aby buňky tabulky měly dostatečnou šířku */
+            #tabulka-body td {
+                padding: 3px 5px;
+                min-width: 60px;
+            }
+        }
+    `;
+    document.head.appendChild(tiskStyle);
+    
+    // Nahradit hodnoty časových inputů textovými prvky s pevným formátem
+    const casoveInputy = document.querySelectorAll('input[type="time"]');
+    const casovePoholdery = [];
+    
+    casoveInputy.forEach(input => {
+        // Uložení aktuální hodnoty inputu
+        casovePoholdery.push({
+            value: input.value,
+            parent: input.parentNode
+        });
+        
+        // Funkce pro zajištění správného formátu času
+        const formatovatCas = (cas) => {
+            if (!cas) return '';
+            // Rozdělit na hodiny a minuty a zajistit formát HH:MM
+            const parts = cas.split(':');
+            if (parts.length === 2) {
+                return parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+            }
+            return cas;
+        };
+        
+        // Nahradit input textovým prvkem s pevným formátem
+        const textovyPrvek = document.createElement('div'); // Používáme div místo span pro lepší kontrolu šířky
+        textovyPrvek.className = 'tisk-cas';
+        textovyPrvek.textContent = formatovatCas(input.value);
+        textovyPrvek.style.width = '100%';
+        textovyPrvek.style.textAlign = 'center';
+        
+        input.style.display = 'none'; // Skrýt původní input
+        input.parentNode.appendChild(textovyPrvek); // Přidat textový prvek jako potomka
+    });
+    
+    // Skrýt prázdné výběry v selectech
+    const vsechnySelecty = document.querySelectorAll('select');
+    vsechnySelecty.forEach(select => {
+        if (!select.value) {
+            select.style.visibility = 'hidden';
+        }
+    });
+    
+    // Tisk výkazu
     window.print();
+    
+    // Obnovení původních hodnot po tisku
+    setTimeout(() => {
+        // Odstranit dočasný styl
+        document.getElementById('docasny-tisk-styl')?.remove();
+        
+        // Obnovit původní inputy
+        document.querySelectorAll('.tisk-cas').forEach(prvek => {
+            prvek.remove();
+        });
+        
+        // Zobrazit původní inputy
+        casovePoholdery.forEach(holder => {
+            const inputs = holder.parent.querySelectorAll('input[type="time"]');
+            inputs.forEach(input => {
+                input.style.display = '';
+            });
+        });
+        
+        // Obnovit viditelnost selectů
+        vsechnySelecty.forEach(select => {
+            select.style.visibility = '';
+        });
+    }, 500); // Krátké zpoždění pro dokončení tisku
 }
 
 
@@ -886,3 +989,22 @@ function pridejTlacitkoPreepocet() {
     }
   }
 }
+
+// Přidat do inicializační funkce nebo hned po načtení stránky
+function pridejCSSProSelecty() {
+    const style = document.createElement('style');
+    style.textContent = `
+        select option[value=""] {
+            color: #999;
+        }
+        
+        @media print {
+            select option[value=""] {
+                display: none;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+document.addEventListener('DOMContentLoaded', pridejCSSProSelecty);
