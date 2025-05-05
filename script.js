@@ -879,6 +879,29 @@ function tiskVykazu() {
         }
     });
     
+    // V sekci přípravy k tisku ve funkci tiskVykazu()
+    // Po zpracování časových inputů
+    const numberInputs = document.querySelectorAll('input[type="number"]');
+    const numberHolders = [];
+
+    numberInputs.forEach(input => {
+        // Uložení reference pro obnovu
+        numberHolders.push({
+            input: input,
+            value: input.value
+        });
+        
+        // Vytvořit textový element s hodnotou
+        const textEl = document.createElement('div');
+        textEl.className = 'tisk-number';
+        textEl.textContent = parseFloat(input.value).toFixed(1);
+        textEl.style.textAlign = 'center';
+        
+        // Skrýt původní input a přidat text
+        input.style.display = 'none';
+        input.parentNode.appendChild(textEl);
+    });
+    
     // Tisk výkazu
     window.print();
     
@@ -903,6 +926,15 @@ function tiskVykazu() {
         // Obnovit viditelnost selectů
         vsechnySelecty.forEach(select => {
             select.style.visibility = '';
+        });
+        
+        // Po obnovení časových inputů
+        numberHolders.forEach(holder => {
+            holder.input.style.display = '';
+        });
+
+        document.querySelectorAll('.tisk-number').forEach(el => {
+            el.remove();
         });
     }, 500); // Krátké zpoždění pro dokončení tisku
 }
