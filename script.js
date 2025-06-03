@@ -165,15 +165,15 @@ const zamestnanci = {};
 
 // Funkce pro načtení jmen a čísel zaměstnanců ze souboru Seznam_uzivatelu.txt
 function nacistJmenaZeSouboru() {
-    // Místo načítání ze souboru použijeme integrovaný seznam v HTML
-    const seznamZamestnancu = document.getElementById('integrovanySeznamZamestnancu');
-    
-    if (seznamZamestnancu) {
-        try {
-            // Získání textu z hidden elementu
-            const data = seznamZamestnancu.textContent || seznamZamestnancu.innerText;
-            
-            // Zpracování textu stejně jako při načítání ze souboru
+    fetch('Seznam_uzivatelu.txt')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Soubor se seznamem uživatelů nebyl nalezen');
+            }
+            return response.text();
+        })
+        .then(data => {
+            // Rozdělení textu na řádky a odstranění prázdných řádků
             const radky = data.split('\n')
                 .map(radek => radek.trim())
                 .filter(radek => radek.length > 0);
@@ -225,12 +225,19 @@ function nacistJmenaZeSouboru() {
                     cisloInput.readOnly = false;
                 }
             });
-        } catch (error) {
-            console.error('Chyba při zpracování integrovaného seznamu zaměstnanců:', error);
-        }
-    } else {
-        console.error('Element pro integrovaný seznam zaměstnanců nenalezen');
-    }
+        })
+        .catch(error => {
+            console.error('Chyba při načítání seznamu jmen:', error);
+            
+            // V případě chyby zobrazíme v select boxu informaci o chybě
+            const selectJmeno = document.getElementById('jmeno');
+            selectJmeno.innerHTML = '';
+            
+            const errorOption = document.createElement('option');
+            errorOption.value = '';
+            errorOption.textContent = 'Nepodařilo se načíst seznam jmen';
+            selectJmeno.appendChild(errorOption);
+        });
 }
 
 async function generujVykaz() {
